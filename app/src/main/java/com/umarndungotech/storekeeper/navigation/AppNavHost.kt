@@ -6,9 +6,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.umarndungotech.storekeeper.ui.auth.LoginScreen
 import com.umarndungotech.storekeeper.ui.auth.SignUpScreen
-import com.umarndungotech.storekeeper.ui.screens.DashboardScreen
 import com.umarndungotech.storekeeper.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.umarndungotech.storekeeper.ui.product.ProductDashboardScreen
+import com.umarndungotech.storekeeper.viewmodel.ProductViewModel
 
 sealed class AuthScreen(val route: String) {
     object Login : AuthScreen("login")
@@ -20,7 +21,7 @@ sealed class ProductScreen(val route: String) {
 }
 
 @Composable
-fun AppNavHost(navController: NavHostController, authViewModel: AuthViewModel = viewModel()) {
+fun AppNavHost(navController: NavHostController, authViewModel: AuthViewModel = viewModel(), productViewModel: ProductViewModel) {
 
     NavHost(
         navController = navController,
@@ -36,7 +37,7 @@ fun AppNavHost(navController: NavHostController, authViewModel: AuthViewModel = 
         }
 
         composable(ProductScreen.Dashboard.route) {
-            DashboardScreen(navController)
+            ProductDashboardScreen(navController, productViewModel)
         }
     }
 }
