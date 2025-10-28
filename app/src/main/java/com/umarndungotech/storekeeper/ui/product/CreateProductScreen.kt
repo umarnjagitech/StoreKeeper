@@ -15,6 +15,9 @@ import androidx.compose.ui.res.painterResource
 import com.umarndungotech.storekeeper.R
 
 
+import com.umarndungotech.storekeeper.data.model.Product
+import kotlinx.coroutines.flow.collectLatest
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateProductScreen(
@@ -25,6 +28,14 @@ fun CreateProductScreen(
     var productQuantity by remember { mutableStateOf("") }
     var productPrice by remember { mutableStateOf("") }
     var productImageUri by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        productViewModel.insertionSuccess.collectLatest { isSuccess ->
+            if (isSuccess == true) {
+                navController.popBackStack()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -81,7 +92,15 @@ fun CreateProductScreen(
 
             Button(
                 onClick = {
-                    // TODO: Validate and save product via viewModel.insertProduct(...)
+                    if (productName.isNotBlank() && productQuantity.isNotBlank() && productPrice.isNotBlank()) {
+                        val product = Product(
+                            name = productName,
+                            quantity = productQuantity.toInt(),
+                            price = productPrice.toDouble(),
+                            imageUri = productImageUri
+                        )
+                        productViewModel.insertProduct(product)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

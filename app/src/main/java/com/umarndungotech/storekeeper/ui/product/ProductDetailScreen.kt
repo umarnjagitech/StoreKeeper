@@ -26,11 +26,7 @@ fun ProductDetailScreen(
     productId: Int
 ) {
     val scope = rememberCoroutineScope()
-    var product by remember { mutableStateOf<com.umarndungotech.storekeeper.data.model.Product?>(null) }
-
-    LaunchedEffect(productId) {
-        product = productViewModel.getProductById(productId)
-    }
+    val product by productViewModel.getProductById(productId).collectAsState(initial = null)
 
     Scaffold(
         topBar = {

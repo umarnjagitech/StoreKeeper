@@ -21,17 +21,13 @@ fun UpdateProductScreen(
     productViewModel: ProductViewModel,
     productId: Int
 ) {
-    val selectedProduct by productViewModel.selectedProduct.collectAsState()
+    val product by productViewModel.getProductById(productId).collectAsState(initial = null)
 
-    LaunchedEffect(productId) {
-        productViewModel.loadProductById(productId)
-    }
+    product?.let { prod ->
 
-    selectedProduct?.let { product ->
-
-        var name by remember { mutableStateOf(product.name) }
-        var quantity by remember { mutableStateOf(product.quantity.toString()) }
-        var price by remember { mutableStateOf(product.price.toString()) }
+        var name by remember { mutableStateOf(prod.name) }
+        var quantity by remember { mutableStateOf(prod.quantity.toString()) }
+        var price by remember { mutableStateOf(prod.price.toString()) }
 
         Scaffold(
             topBar = {
@@ -82,7 +78,7 @@ fun UpdateProductScreen(
 
                 Button(
                     onClick = {
-                        val updatedProduct = product.copy(
+                        val updatedProduct = prod.copy(
                             name = name,
                             quantity = quantity.toIntOrNull() ?: 0,
                             price = price.toDoubleOrNull() ?: 0.0
