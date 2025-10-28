@@ -48,6 +48,22 @@ fun CreateProductScreen(
     var productImageUri by remember { mutableStateOf<String?>(null) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
 
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            productImageUri = uri?.toString()
+        }
+    )
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                // The image is already saved to the URI provided
+            }
+        }
+    )
+
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted: Boolean ->
@@ -64,22 +80,6 @@ fun CreateProductScreen(
             } else {
                 // Explain to the user that the feature is unavailable because the
                 // features requires a permission that the user has denied.
-            }
-        }
-    )
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri ->
-            productImageUri = uri?.toString()
-        }
-    )
-
-    val takePictureLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            if (success) {
-                // The image is already saved to the URI provided
             }
         }
     )
