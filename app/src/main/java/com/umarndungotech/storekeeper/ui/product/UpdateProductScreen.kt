@@ -59,10 +59,7 @@ fun UpdateProductScreen(
             contract = ActivityResultContracts.TakePicture(),
             onResult = { success ->
                 if (success) {
-                    // Image is saved to the temporary URI, now copy it to internal storage
-                    val tempUri = Uri.parse(imageUri)
-                    val newUri = saveImageToInternalStorage(context, tempUri)
-                    imageUri = newUri.toString()
+                    // The image is already saved to the URI provided
                 }
             }
         )
@@ -174,6 +171,4 @@ fun UpdateProductScreen(
     } ?: Text("Loading...", modifier = Modifier.padding(16.dp))
 }
 
-// Re-using the helper functions from CreateProductScreen.kt
-// fun createImageFile(context: Context): File { ... }
-// fun saveImageToInternalStorage(context: Context, tempUri: Uri): Uri { ... }
+
