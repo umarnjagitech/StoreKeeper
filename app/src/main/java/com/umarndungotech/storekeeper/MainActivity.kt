@@ -16,9 +16,27 @@ import com.umarndungotech.storekeeper.viewmodel.AuthViewModel
 import com.umarndungotech.storekeeper.viewmodel.ProductViewModel
 import com.umarndungotech.storekeeper.viewmodel.ViewModelFactory
 
+import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+
 class MainActivity : ComponentActivity() {
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Ask for camera permission
+        permissionLauncher.launch(android.Manifest.permission.CAMERA)
+
         setContent {
             StorekeeperTheme {
                 // A surface container using the 'background' color from the theme

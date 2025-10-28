@@ -15,8 +15,11 @@ import androidx.compose.ui.res.painterResource
 import com.umarndungotech.storekeeper.R
 
 
-import com.umarndungotech.storekeeper.data.model.Product
-import kotlinx.coroutines.flow.collectLatest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.rememberAsyncImagePainter
+
+// ... (imports)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +31,13 @@ fun CreateProductScreen(
     var productQuantity by remember { mutableStateOf("") }
     var productPrice by remember { mutableStateOf("") }
     var productImageUri by remember { mutableStateOf<String?>(null) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            productImageUri = uri?.toString()
+        }
+    )
 
     LaunchedEffect(Unit) {
         productViewModel.insertionSuccess.collectLatest { isSuccess ->
@@ -73,10 +83,11 @@ fun CreateProductScreen(
             )
 
             Image(
-                painter = if (productImageUri == null)
+                painter = if (productImageUri == null) {
                     painterResource(id = R.drawable.placeholder_image)
-                else
-                    painterResource(id = R.drawable.placeholder_image), // TODO: load real image from URI
+                } else {
+                    rememberAsyncImagePainter(model = productImageUri)
+                },
                 contentDescription = "Product Image",
                 modifier = Modifier
                     .fillMaxWidth()
@@ -84,7 +95,7 @@ fun CreateProductScreen(
             )
 
             Button(
-                onClick = { /* TODO: Open camera/gallery chooser */ },
+                onClick = { galleryLauncher.launch("image/*") },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Select Image")

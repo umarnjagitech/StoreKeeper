@@ -14,6 +14,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.umarndungotech.storekeeper.R
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.rememberAsyncImagePainter
+
+// ... (imports)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpdateProductScreen(
@@ -28,6 +34,14 @@ fun UpdateProductScreen(
         var name by remember { mutableStateOf(prod.name) }
         var quantity by remember { mutableStateOf(prod.quantity.toString()) }
         var price by remember { mutableStateOf(prod.price.toString()) }
+        var imageUri by remember { mutableStateOf(prod.imageUri) }
+
+        val galleryLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+            onResult = { uri ->
+                imageUri = uri?.toString()
+            }
+        )
 
         Scaffold(
             topBar = {
@@ -43,13 +57,26 @@ fun UpdateProductScreen(
             ) {
 
                 Image(
-                    painter = painterResource(id = R.drawable.placeholder_image),
+                    painter = if (imageUri == null) {
+                        painterResource(id = R.drawable.placeholder_image)
+                    } else {
+                        rememberAsyncImagePainter(model = imageUri)
+                    },
                     contentDescription = "Product Image",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
                     contentScale = ContentScale.Crop
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { galleryLauncher.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Select Image")
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -81,7 +108,8 @@ fun UpdateProductScreen(
                         val updatedProduct = prod.copy(
                             name = name,
                             quantity = quantity.toIntOrNull() ?: 0,
-                            price = price.toDoubleOrNull() ?: 0.0
+                            price = price.toDoubleOrNull() ?: 0.0,
+                            imageUri = imageUri
                         )
                         productViewModel.updateProduct(updatedProduct)
                         navController.popBackStack()
