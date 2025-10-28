@@ -1,4 +1,4 @@
-package com.umarndungotech.storekeeper.ui.screens
+package com.umarndungotech.storekeeper.ui.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.ClickableText
