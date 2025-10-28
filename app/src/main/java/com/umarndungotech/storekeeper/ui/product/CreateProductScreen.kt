@@ -59,10 +59,7 @@ fun CreateProductScreen(
         contract = ActivityResultContracts.TakePicture(),
         onResult = { success ->
             if (success) {
-                // Image is saved to the temporary URI, now copy it to internal storage
-                val tempUri = Uri.parse(productImageUri)
-                val newUri = saveImageToInternalStorage(context, tempUri)
-                productImageUri = newUri.toString()
+                // The image is already saved to the URI provided
             }
         }
     )
@@ -186,15 +183,4 @@ fun createImageFile(context: Context): File {
     )
 }
 
-fun saveImageToInternalStorage(context: Context, tempUri: Uri): Uri {
-    val inputStream = context.contentResolver.openInputStream(tempUri)
-    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val outputStream = context.openFileOutput("product_image_${timeStamp}.jpg", Context.MODE_PRIVATE)
 
-    inputStream?.use { input ->
-        outputStream.use { output ->
-            input.copyTo(output)
-        }
-    }
-    return Uri.fromFile(File(context.filesDir, "product_image_${timeStamp}.jpg"))
-}

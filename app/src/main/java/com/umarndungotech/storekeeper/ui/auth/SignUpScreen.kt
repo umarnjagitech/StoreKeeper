@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +38,14 @@ fun SignUpScreen(navController: NavController, authViewModel: AuthViewModel){
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val signupSuccess by authViewModel.signupSuccess.collectAsState()
+    val errorMessage by authViewModel.errorMessage.collectAsState()
+
+    LaunchedEffect(signupSuccess) {
+        if (signupSuccess == true) {
+            navController.navigate("login")
+        }
+    }
 
     Column (
         modifier = Modifier
@@ -103,17 +112,13 @@ fun SignUpScreen(navController: NavController, authViewModel: AuthViewModel){
 
         Button(
             onClick = {
-                when {
-                    name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() ->
-                        errorMessage = "Please fill all fields."
-                    !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
-                        errorMessage = "Invalid email format."
-                    password != confirmPassword ->
-                        errorMessage = "Passwords do not match."
-                    else -> {
-                        errorMessage = null
-                        authViewModel.signUp(name, email, password)  // Call ViewModel logic
-                    }
+                if (name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                    // Or handle this in ViewModel
+                } else if (password != confirmPassword) {
+                    // Or handle this in ViewModel
+                }
+                else {
+                    authViewModel.signUp(name, email, password)
                 }
             },
             modifier = Modifier.fillMaxWidth()
