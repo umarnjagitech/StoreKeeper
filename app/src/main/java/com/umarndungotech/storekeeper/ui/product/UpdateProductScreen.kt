@@ -18,6 +18,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import coil.compose.rememberAsyncImagePainter
 
+import android.net.Uri
+import android.content.Context
+import androidx.core.content.FileProvider
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import android.os.Environment
+
 // ... (imports)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +36,7 @@ fun UpdateProductScreen(
     productViewModel: ProductViewModel,
     productId: Int
 ) {
+    val context = LocalContext.current
     val product by productViewModel.getProductById(productId).collectAsState(initial = null)
 
     product?.let { prod ->
@@ -35,11 +45,24 @@ fun UpdateProductScreen(
         var quantity by remember { mutableStateOf(prod.quantity.toString()) }
         var price by remember { mutableStateOf(prod.price.toString()) }
         var imageUri by remember { mutableStateOf(prod.imageUri) }
+        var showImageSourceDialog by remember { mutableStateOf(false) }
 
         val galleryLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent(),
             onResult = { uri ->
                 imageUri = uri?.toString()
+            }
+        )
+
+        val takePictureLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicture(),
+            onResult = { success ->
+                if (success) {
+                    // Image is saved to the temporary URI, now copy it to internal storage
+                    val tempUri = Uri.parse(imageUri)
+                    val newUri = saveImageToInternalStorage(context, tempUri)
+                    imageUri = newUri.toString()
+                }
             }
         )
 
@@ -60,7 +83,7 @@ fun UpdateProductScreen(
                     painter = if (imageUri == null) {
                         painterResource(id = R.drawable.placeholder_image)
                     } else {
-                        rememberAsyncImagePainter(model = imageUri)
+                        rememberAsyncImagePainter(model = Uri.parse(imageUri))
                     },
                     contentDescription = "Product Image",
                     modifier = Modifier
@@ -72,7 +95,7 @@ fun UpdateProductScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { galleryLauncher.launch("image/*") },
+                    onClick = { showImageSourceDialog = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Select Image")
@@ -120,5 +143,36 @@ fun UpdateProductScreen(
                 }
             }
         }
+
+        if (showImageSourceDialog) {
+            AlertDialog(
+                onDismissRequest = { showImageSourceDialog = false },
+                title = { Text("Select Image Source") },
+                text = { Text("Choose whether to take a new photo or select from your gallery.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showImageSourceDialog = false
+                        val photoFile = createImageFile(context)
+                        val photoUri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            photoFile
+                        )
+                        imageUri = photoUri.toString()
+                        takePictureLauncher.launch(photoUri)
+                    }) { Text("Take Photo") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showImageSourceDialog = false
+                        galleryLauncher.launch("image/*")
+                    }) { Text("Choose from Gallery") }
+                }
+            )
+        }
     } ?: Text("Loading...", modifier = Modifier.padding(16.dp))
 }
+
+// Re-using the helper functions from CreateProductScreen.kt
+// fun createImageFile(context: Context): File { ... }
+// fun saveImageToInternalStorage(context: Context, tempUri: Uri): Uri { ... }

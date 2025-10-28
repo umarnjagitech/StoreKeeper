@@ -21,21 +21,46 @@ import coil.compose.rememberAsyncImagePainter
 
 // ... (imports)
 
+import android.os.Environment
+import android.net.Uri
+import android.content.Context
+import androidx.core.content.FileProvider
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+// ... (imports)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateProductScreen(
     navController: NavController,
     productViewModel: ProductViewModel
 ) {
+    val context = LocalContext.current
     var productName by remember { mutableStateOf("") }
     var productQuantity by remember { mutableStateOf("") }
     var productPrice by remember { mutableStateOf("") }
     var productImageUri by remember { mutableStateOf<String?>(null) }
+    var showImageSourceDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             productImageUri = uri?.toString()
+        }
+    )
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            if (success) {
+                // Image is saved to the temporary URI, now copy it to internal storage
+                val tempUri = Uri.parse(productImageUri)
+                val newUri = saveImageToInternalStorage(context, tempUri)
+                productImageUri = newUri.toString()
+            }
         }
     )
 
@@ -86,7 +111,7 @@ fun CreateProductScreen(
                 painter = if (productImageUri == null) {
                     painterResource(id = R.drawable.placeholder_image)
                 } else {
-                    rememberAsyncImagePainter(model = productImageUri)
+                    rememberAsyncImagePainter(model = Uri.parse(productImageUri))
                 },
                 contentDescription = "Product Image",
                 modifier = Modifier
@@ -95,7 +120,7 @@ fun CreateProductScreen(
             )
 
             Button(
-                onClick = { galleryLauncher.launch("image/*") },
+                onClick = { showImageSourceDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Select Image")
@@ -118,5 +143,55 @@ fun CreateProductScreen(
                 Text("Create Product")
             }
         }
+
+        if (showImageSourceDialog) {
+            AlertDialog(
+                onDismissRequest = { showImageSourceDialog = false },
+                title = { Text("Select Image Source") },
+                text = { Text("Choose whether to take a new photo or select from your gallery.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showImageSourceDialog = false
+                        val photoFile = createImageFile(context)
+                        val photoUri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            photoFile
+                        )
+                        productImageUri = photoUri.toString()
+                        takePictureLauncher.launch(photoUri)
+                    }) { Text("Take Photo") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showImageSourceDialog = false
+                        galleryLauncher.launch("image/*")
+                    }) { Text("Choose from Gallery") }
+                }
+            )
+        }
     }
+}
+
+fun createImageFile(context: Context): File {
+    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    return File.createTempFile(
+        "JPEG_${timeStamp}_", /* prefix */
+        ".jpg", /* suffix */
+        storageDir /* directory */
+    )
+}
+
+fun saveImageToInternalStorage(context: Context, tempUri: Uri): Uri {
+    val inputStream = context.contentResolver.openInputStream(tempUri)
+    val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val outputStream = context.openFileOutput("product_image_${timeStamp}.jpg", Context.MODE_PRIVATE)
+
+    inputStream?.use { input ->
+        outputStream.use { output ->
+            input.copyTo(output)
+        }
+    }
+    return Uri.fromFile(File(context.filesDir, "product_image_${timeStamp}.jpg"))
 }
