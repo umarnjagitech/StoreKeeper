@@ -48,6 +48,26 @@ fun UpdateProductScreen(
         var imageUri by remember { mutableStateOf(prod.imageUri) }
         var showImageSourceDialog by remember { mutableStateOf(false) }
 
+        val requestPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { isGranted: Boolean ->
+                if (isGranted) {
+                    // Permission is granted. Continue with taking a picture.
+                    val photoFile = createImageFile(context)
+                    val photoUri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        photoFile
+                    )
+                    imageUri = photoUri.toString()
+                    takePictureLauncher.launch(photoUri)
+                } else {
+                    // Explain to the user that the feature is unavailable because the
+                    // features requires a permission that the user has denied.
+                }
+            }
+        )
+
         val galleryLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent(),
             onResult = { uri ->
@@ -150,14 +170,7 @@ fun UpdateProductScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         showImageSourceDialog = false
-                        val photoFile = createImageFile(context)
-                        val photoUri = FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            photoFile
-                        )
-                        imageUri = photoUri.toString()
-                        takePictureLauncher.launch(photoUri)
+                        requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
                     }) { Text("Take Photo") }
                 },
                 dismissButton = {

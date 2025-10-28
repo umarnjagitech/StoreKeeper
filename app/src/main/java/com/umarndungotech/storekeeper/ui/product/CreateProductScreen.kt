@@ -48,6 +48,26 @@ fun CreateProductScreen(
     var productImageUri by remember { mutableStateOf<String?>(null) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
 
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission is granted. Continue with taking a picture.
+                val photoFile = createImageFile(context)
+                val photoUri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    photoFile
+                )
+                productImageUri = photoUri.toString()
+                takePictureLauncher.launch(photoUri)
+            } else {
+                // Explain to the user that the feature is unavailable because the
+                // features requires a permission that the user has denied.
+            }
+        }
+    )
+
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
@@ -128,14 +148,19 @@ fun CreateProductScreen(
 
             Button(
                 onClick = {
-                    if (productName.isNotBlank() && productQuantity.isNotBlank() && productPrice.isNotBlank()) {
+                    val quantity = productQuantity.toIntOrNull()
+                    val price = productPrice.toDoubleOrNull()
+
+                    if (productName.isNotBlank() && quantity != null && price != null) {
                         val product = Product(
                             name = productName,
-                            quantity = productQuantity.toInt(),
-                            price = productPrice.toDouble(),
+                            quantity = quantity,
+                            price = price,
                             imageUri = productImageUri
                         )
                         productViewModel.insertProduct(product)
+                    } else {
+                        // Optionally, show an error message to the user
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -152,14 +177,7 @@ fun CreateProductScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         showImageSourceDialog = false
-                        val photoFile = createImageFile(context)
-                        val photoUri = FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            photoFile
-                        )
-                        productImageUri = photoUri.toString()
-                        takePictureLauncher.launch(photoUri)
+                        requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
                     }) { Text("Take Photo") }
                 },
                 dismissButton = {
