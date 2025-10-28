@@ -27,7 +27,7 @@ fun ProductDashboardScreen(navController: NavController, productViewModel: Produ
             FloatingActionButton(onClick = {
                 navController.navigate("createProduct")
             }) {
-                Text("+")
+                Text("+", contentDescription = "Add new product")
             }
         }
     ) { padding ->
