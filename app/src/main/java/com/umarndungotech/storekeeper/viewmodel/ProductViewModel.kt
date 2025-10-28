@@ -17,38 +17,49 @@ class ProductViewModel(private val productDao: ProductDao) : ViewModel() {
     val selectedProduct: StateFlow<Product?> = _selectedProduct
 
     init {
-        getAllProducts()
+        loadAllProducts()
     }
 
-    private fun getAllProducts() {
+    /** Load all products for dashboard */
+    private fun loadAllProducts() {
         viewModelScope.launch {
             productDao.getAllProducts().collect { productList ->
                 _products.value = productList
             }
         }
     }
+    suspend fun getProductById(id: Int): Product? {
+        return productDao.getProductById(id)
+    }
 
-    fun getProductById(id: Int) {
+    /** Load one product for detail/update screen */
+    fun loadProductById(id: Int) {
         viewModelScope.launch {
             _selectedProduct.value = productDao.getProductById(id)
         }
     }
 
+    /** Normal CRUD operations */
     fun insertProduct(product: Product) {
         viewModelScope.launch {
             productDao.insert(product)
+            loadAllProducts() // refresh UI immediately
         }
     }
 
     fun updateProduct(product: Product) {
         viewModelScope.launch {
             productDao.update(product)
+            loadProductById(product.id) // refresh detail screen if open
+            loadAllProducts()           // refresh dashboard
         }
     }
 
     fun deleteProduct(product: Product) {
         viewModelScope.launch {
             productDao.delete(product)
+            _selectedProduct.value = null
+            loadAllProducts() // refresh dashboard
         }
     }
 }
